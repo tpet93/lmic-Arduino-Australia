@@ -157,6 +157,13 @@ void hal_waitUntil (u4_t time) {
 
 // check and rewind for target time
 u1_t hal_checkTimer (u4_t time) {
+    static uint8_t last;
+    uint8_t newt = hal_ticks() / ((1L << 16) * 16);
+    if (newt != last) {
+        last = newt;
+        printf("checktimer now = %ld, timer = %ld, delta = %ld\n", (long)hal_ticks(), (long)time, (long)delta_time(time));
+    }
+
     // No need to schedule wakeup, since we're not sleeping
     return delta_time(time) <= 0;
 }

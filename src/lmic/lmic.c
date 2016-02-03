@@ -641,6 +641,7 @@ static void updateTx (ostime_t txbeg) {
 }
 
 static ostime_t nextTx (ostime_t now) {
+    printf("Selecting next TX channel and time, now = %ld\n", (long)now);
     u1_t bmap=0xF;
     do {
         ostime_t mintime = now + /*8h*/sec2osticks(28800);
@@ -658,10 +659,14 @@ static ostime_t nextTx (ostime_t now) {
                 (LMIC.channelDrMap[chnl] & (1<<(LMIC.datarate&0xF))) != 0  &&
                 band == (LMIC.channelFreq[chnl] & 0x3) ) { // in selected band
                 LMIC.txChnl = LMIC.bands[band].lastchnl = chnl;
+                printf("Selected band %d, channel %d (freq %ld), available at %ld \n", band, chnl, (long)(LMIC.channelFreq[chnl] & ~(u4_t)3), (long)mintime);
                 return mintime;
             }
         }
         if( (bmap &= ~(1<<band)) == 0 ) {
+            printf("Failed to find channel\n");
+            for( u1_t bi=0; bi<4; bi++ )
+                printf("Band %d is available at %ld\n", bi, (long)LMIC.bands[bi].avail);
             // No feasible channel  found!
             return mintime;
         }
@@ -2002,6 +2007,7 @@ static void engineUpdate (void) {
         // Earliest possible time vs overhead to setup radio
         if( txbeg - (now + TX_RAMPUP) < 0 ) {
             // We could send right now!
+            printf("Channel is available now, starting TX\n");
         txbeg = now;
             dr_t txdr = (dr_t)LMIC.datarate;
 #if !defined(DISABLE_JOIN)
@@ -2099,6 +2105,7 @@ static void engineUpdate (void) {
 #endif // !DISABLE_BEACONS
 
   txdelay:
+    printf("No channel available yet, next channel in %ld ticks\n", (long)(txbeg - now));
     EV(devCond, INFO, (e_.reason = EV::devCond_t::TX_DELAY,
                        e_.eui    = MAIN::CDEV->getEui(),
                        e_.info   = osticks2ms(txbeg-now),
