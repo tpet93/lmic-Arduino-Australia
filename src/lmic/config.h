@@ -14,4 +14,12 @@
 #define US_PER_OSTICK 16
 #define OSTICKS_PER_SEC (1000000 / US_PER_OSTICK)
 
+// Uncomment this to disable all code related to joining
+//#define DISABLE_JOIN
+// Uncomment this to disable all code related to ping
+//#define DISABLE_PING
+// Uncomment this to disable all code related to beacon tracking.
+// Requires ping to be disabled too
+//#define DISABLE_BEACONS
+
 #endif // _lmic_config_h_
