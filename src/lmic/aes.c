@@ -18,6 +18,9 @@
 #elif AESMINI == 2
 #include "../tiny-aes128-c/aes.h"
 #define AES_Encrypt(data, key) AES128_ECB_encrypt(data, key, data)
+#elif AESMINI == 3
+#include <aes128_enc.h>
+#define AES_Encrypt(data, key) aes128_enc_single(key, data)
 #endif
 
 u4_t AESAUX[16/sizeof(u4_t)];

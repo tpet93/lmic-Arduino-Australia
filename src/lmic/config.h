@@ -36,6 +36,7 @@
 // 0 is regular LMIC
 // 1 is Ideetron AES
 // 2 is tiny-AES128-C
-#define AESMINI 2
+// 3 is AESLib (that uses a license incompatible with the EPL!)
+#define AESMINI 3
 
 #endif // _lmic_config_h_
