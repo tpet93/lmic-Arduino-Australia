@@ -46,7 +46,7 @@ static const u1_t PROGMEM ARTKEY[16] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD
 
 // LoRaWAN end-device address (DevAddr)
 // See http://thethingsnetwork.org/wiki/AddressSpace
-static const u4_t DEVADDR = 0x03FF0001 ; // <-- Change this address for every node!
+u4_t DEVADDR = 0x03FF0001 ; // <-- Change this address for every node!
 
 //////////////////////////////////////////////////
 // APPLICATION CALLBACKS

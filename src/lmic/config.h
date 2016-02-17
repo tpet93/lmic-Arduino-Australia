@@ -33,4 +33,6 @@
 //#define DISABLE_MCMD_PING_SET // set ping freq, automatically disabled by DISABLE_PING
 //#define DISABLE_MCMD_BCNI_ANS // next beacon start, automatical disabled by DISABLE_BEACON
 
+#define AESMINI 1
+
 #endif // _lmic_config_h_
