@@ -13,6 +13,9 @@
 #include <Arduino.h>
 #include <stdio.h>
 
+u4_t AESAUX[16/sizeof(u4_t)];
+u4_t AESKEY[11*16/sizeof(u4_t)];
+
 u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len);
 
 u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
@@ -22,20 +25,16 @@ u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
     return res;
 }
 
-#if AESMINI > 0
-
-#if AESMINI == 1
+#if AES_IMPLEMENTATION > 1
+#if AES_IMPLEMENTATION == 2
 #include "../aes/AES-128_V10.h"
-#elif AESMINI == 2
+#elif AES_IMPLEMENTATION == 3
 #include "../tiny-aes128-c/aes.h"
 #define AES_Encrypt(data, key) AES128_ECB_encrypt(data, key, data)
-#elif AESMINI == 3
+#elif AES_IMPLEMENTATION == 4
 #include <aes128_enc.h>
 #define AES_Encrypt(data, key) aes128_enc_single(key, data)
 #endif
-
-u4_t AESAUX[16/sizeof(u4_t)];
-u4_t AESKEY[11*16/sizeof(u4_t)];
 
 // Shift the given buffer left one bit
 static void shift_left(xref2u1_t buf, u1_t len) {
@@ -140,7 +139,7 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
     return 0;
 }
 
-#else // #ifndef AESMINI
+#elif AES_IMPLEMENTATION == 1
 
 #define AES_MICSUB 0x30 // internal use only
 
@@ -495,5 +494,8 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
         }
         return AESAUX[0];
 }
-
-#endif // ifndef AESmini
+#else
+u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
+    return 0;
+}
+#endif

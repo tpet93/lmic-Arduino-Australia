@@ -33,10 +33,11 @@
 //#define DISABLE_MCMD_PING_SET // set ping freq, automatically disabled by DISABLE_PING
 //#define DISABLE_MCMD_BCNI_ANS // next beacon start, automatical disabled by DISABLE_BEACON
 
-// 0 is regular LMIC
-// 1 is Ideetron AES
-// 2 is tiny-AES128-C
-// 3 is AESLib (that uses a license incompatible with the EPL!)
-#define AESMINI 3
+// 0 is a no-op AES
+// 1 is regular LMIC
+// 2 is Ideetron AES
+// 3 is tiny-AES128-C
+// 4 is AESLib (that uses a license incompatible with the EPL!)
+#define AES_IMPLEMENTATION 1
 
 #endif // _lmic_config_h_
