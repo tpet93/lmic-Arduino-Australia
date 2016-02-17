@@ -67,7 +67,7 @@ void os_getDevKey (u1_t* buf) {
     memcpy_P(buf, DEVKEY, 16);
 }
 
-uint8_t mydata[] = "Hello, world!";
+uint8_t mydata[] = "Hello, world!123";
 static osjob_t sendjob;
 
 // Pin mapping
