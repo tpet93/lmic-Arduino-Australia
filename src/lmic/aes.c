@@ -11,9 +11,14 @@
 
 #include "oslmic.h"
 
-#if AESMINI==1
+#if AESMINI > 0
 
+#if AESMINI == 1
 #include "../aes/AES-128_V10.h"
+#elif AESMINI == 2
+#include "../tiny-aes128-c/aes.h"
+#define AES_Encrypt(data, key) AES128_ECB_encrypt(data, key, data)
+#endif
 
 u4_t AESAUX[16/sizeof(u4_t)];
 u4_t AESKEY[11*16/sizeof(u4_t)];
