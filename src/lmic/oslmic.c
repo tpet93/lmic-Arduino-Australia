@@ -62,7 +62,6 @@ void os_setCallback (osjob_t* job, osjobcb_t cb) {
 
 // schedule timed job
 void os_setTimedCallback (osjob_t* job, ostime_t time, osjobcb_t cb) {
-    printf("Scheduling job 0x%p at %ld\n", job, (long)time);
     osjob_t** pnext;
     hal_disableIRQs();
     // remove if job was already queued
@@ -97,11 +96,9 @@ void os_runloop_once() {
     if(OS.runnablejobs) {
         j = OS.runnablejobs;
         OS.runnablejobs = j->next;
-        printf("Running available job 0x%p at %ld\n", j, (long)os_getTime());
     } else if(OS.scheduledjobs && hal_checkTimer(OS.scheduledjobs->deadline)) { // check for expired timed jobs
         j = OS.scheduledjobs;
         OS.scheduledjobs = j->next;
-        printf("Running scheduled job 0x%p at %ld\n", j, (long)os_getTime());
     } else { // nothing pending
         hal_sleep(); // wake by irq (timer already restarted)
     }
