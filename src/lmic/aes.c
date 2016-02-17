@@ -10,6 +10,17 @@
  *******************************************************************************/
 
 #include "oslmic.h"
+#include <Arduino.h>
+#include <stdio.h>
+
+u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len);
+
+u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
+    u4_t start = micros();
+    u4_t res = os_aes_internal(mode, buf, len);
+    printf("AES mode %u of %u bytes took %u microseconds\n", (unsigned)mode, (unsigned)len, (unsigned)(micros() - start));
+    return res;
+}
 
 #if AESMINI > 0
 
@@ -111,7 +122,7 @@ static void os_aes_ctr (xref2u1_t buf, u2_t len) {
             }
 }
 
-u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
+u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
     switch (mode & ~AES_MICNOAUX) {
         case AES_MIC:
             os_aes_cmac(buf, len, /* prepend_aux */ !(mode & AES_MICNOAUX));
@@ -347,7 +358,7 @@ static void aesroundkeys () {
     }
 }
 
-u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
+u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
 
         aesroundkeys();
 
