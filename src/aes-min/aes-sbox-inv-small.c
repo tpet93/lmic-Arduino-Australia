@@ -17,6 +17,7 @@
 #include "aes-rotate.h"
 #include "aes-inv.h"
 
+#ifdef ENABLE_SBOX_SMALL
 /*****************************************************************************
  * Functions
  ****************************************************************************/
@@ -42,3 +43,4 @@ void aes_sbox_inv_apply_block(uint8_t p_block[AES_BLOCK_SIZE])
         p_block[i] = aes_sbox_inv(p_block[i]);
     }
 }
+#endif

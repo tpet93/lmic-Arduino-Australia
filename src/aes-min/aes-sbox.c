@@ -10,6 +10,7 @@
 
 #include "aes-sbox.h"
 
+#ifndef ENABLE_SBOX_SMALL
 /*****************************************************************************
  * Look-up tables
  ****************************************************************************/
@@ -53,3 +54,4 @@ void aes_sbox_apply_block(uint8_t p_block[AES_BLOCK_SIZE])
         p_block[i] = aes_sbox(p_block[i]);
     }
 }
+#endif
