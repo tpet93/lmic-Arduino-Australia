@@ -43,6 +43,7 @@
 // use and kept in global memory afterwards). Note that this does not
 // support key changes and currently, this implementation does not
 // produce valid packets for some reason!
+// 7 is avr-aes. See ../avr-aes/aes.h for a lot more options
 #define LMIC_AES_IMPLEMENTATION 1
 
 #endif // _lmic_config_h_

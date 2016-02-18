@@ -32,6 +32,18 @@ u4_t AESKEY[11*16/sizeof(u4_t)];
 #include "../aes-min/aes.h"
 #define AES_Encrypt(data, key) aes128_encrypt(data, key_schedule)
 static u1_t key_schedule[AES128_KEY_SCHEDULE_SIZE];
+#elif LMIC_AES_IMPLEMENTATION == 7
+#include "../avr-aes/aes.h"
+#if (AES_IMPLEMENTATION == 2 || AES_IMPLEMENTATION == 3) // FAST and FURIOUS
+static u1_t expanded_key[176];
+#define AES_Encrypt(data, key) aesCipher(expanded_key, data)
+#elif AES_IMPLEMENTATION == 4 // MINI
+// Keeps key unchanged
+#define AES_Encrypt(data, key) aesCipher(key, data)
+#else // FANTASTIC and SMALL
+// Key is changed
+#define AES_Encrypt(data, key) do {u1_t tmp_key[16]; memcpy(tmp_key, key, 16); aesCipher(tmp_key, data); } while (0)
+#endif
 #endif
 
 // Shift the given buffer left one bit
@@ -501,6 +513,8 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
 u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
     #if LMIC_AES_IMPLEMENTATION == 6
     aes128_key_schedule(key_schedule, AESkey);
+    #elif LMIC_AES_IMPLEMENTATION == 7 && (AES_IMPLEMENTATION == 2 || AES_IMPLEMENTATION == 3)
+    aesKeyExpand(AESkey, expanded_key);
     #endif
 
     u4_t start = micros();
