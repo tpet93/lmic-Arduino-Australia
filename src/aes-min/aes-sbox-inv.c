@@ -9,13 +9,14 @@
  ****************************************************************************/
 
 #include "aes-sbox.h"
+#include <avr/pgmspace.h>
 
 #ifndef ENABLE_SBOX_SMALL
 /*****************************************************************************
  * Look-up tables
  ****************************************************************************/
 
-static const uint8_t aes_sbox_inv_table[256u] =
+static const uint8_t aes_sbox_inv_table[256u] PROGMEM =
 {
     0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
     0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -41,7 +42,7 @@ static const uint8_t aes_sbox_inv_table[256u] =
 
 uint8_t aes_sbox_inv(uint8_t a)
 {
-    return aes_sbox_inv_table[a];
+    return pgm_read_byte(&aes_sbox_inv_table[a]);
 }
 
 void aes_sbox_inv_apply_block(uint8_t p_block[AES_BLOCK_SIZE])
