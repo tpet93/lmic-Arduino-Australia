@@ -16,19 +16,19 @@
 u4_t AESAUX[16/sizeof(u4_t)];
 u4_t AESKEY[11*16/sizeof(u4_t)];
 
-#if AES_IMPLEMENTATION > 1
-#if AES_IMPLEMENTATION == 2
+#if LMIC_AES_IMPLEMENTATION > 1
+#if LMIC_AES_IMPLEMENTATION == 2
 #include "../aes/AES-128_V10.h"
-#elif AES_IMPLEMENTATION == 3
+#elif LMIC_AES_IMPLEMENTATION == 3
 #include "../tiny-aes128-c/aes.h"
 #define AES_Encrypt(data, key) AES128_ECB_encrypt(data, key, data)
-#elif AES_IMPLEMENTATION == 4
+#elif LMIC_AES_IMPLEMENTATION == 4
 #include <aes128_enc.h>
 #define AES_Encrypt(data, key) aes128_enc_single(key, data)
-#elif AES_IMPLEMENTATION == 5
+#elif LMIC_AES_IMPLEMENTATION == 5
 #include "../aes-min/aes.h"
 #define AES_Encrypt(data, key) do {u1_t tmp_key[16]; memcpy(tmp_key, key, 16); aes128_otfks_encrypt(data, tmp_key); } while (0)
-#elif AES_IMPLEMENTATION == 6
+#elif LMIC_AES_IMPLEMENTATION == 6
 #include "../aes-min/aes.h"
 #define AES_Encrypt(data, key) aes128_encrypt(data, key_schedule)
 static u1_t key_schedule[AES128_KEY_SCHEDULE_SIZE];
@@ -137,7 +137,7 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
     return 0;
 }
 
-#elif AES_IMPLEMENTATION == 1
+#elif LMIC_AES_IMPLEMENTATION == 1
 
 #define AES_MICSUB 0x30 // internal use only
 
@@ -499,7 +499,7 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
 #endif
 
 u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
-    #if AES_IMPLEMENTATION == 6
+    #if LMIC_AES_IMPLEMENTATION == 6
     aes128_key_schedule(key_schedule, AESkey);
     #endif
 
