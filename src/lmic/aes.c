@@ -25,6 +25,13 @@ u4_t AESKEY[11*16/sizeof(u4_t)];
 #elif AES_IMPLEMENTATION == 4
 #include <aes128_enc.h>
 #define AES_Encrypt(data, key) aes128_enc_single(key, data)
+#elif AES_IMPLEMENTATION == 5
+#include "../aes-min/aes.h"
+#define AES_Encrypt(data, key) do {u1_t tmp_key[16]; memcpy(tmp_key, key, 16); aes128_otfks_encrypt(data, tmp_key); } while (0)
+#elif AES_IMPLEMENTATION == 6
+#include "../aes-min/aes.h"
+#define AES_Encrypt(data, key) aes128_encrypt(data, key_schedule)
+static u1_t key_schedule[AES128_KEY_SCHEDULE_SIZE];
 #endif
 
 // Shift the given buffer left one bit
@@ -492,6 +499,10 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
 #endif
 
 u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
+    #if AES_IMPLEMENTATION == 6
+    aes128_key_schedule(key_schedule, AESkey);
+    #endif
+
     u4_t start = micros();
     u4_t res = os_aes_internal(mode, buf, len);
     printf("AES mode %u of %u bytes took %u microseconds\n", (unsigned)mode, (unsigned)len, (unsigned)(micros() - start));

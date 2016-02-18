@@ -38,6 +38,11 @@
 // 2 is Ideetron AES
 // 3 is tiny-AES128-C
 // 4 is AESLib (that uses a license incompatible with the EPL!)
+// 5 is aes-min (see ../aes-min/aes-sbox.h to enable small sbox)
+// 6 is aes-min with precalculated key schedule (calculated on first
+// use and kept in global memory afterwards). Note that this does not
+// support key changes and currently, this implementation does not
+// produce valid packets for some reason!
 #define AES_IMPLEMENTATION 1
 
 #endif // _lmic_config_h_
