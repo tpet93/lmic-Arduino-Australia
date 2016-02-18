@@ -16,15 +16,6 @@
 u4_t AESAUX[16/sizeof(u4_t)];
 u4_t AESKEY[11*16/sizeof(u4_t)];
 
-u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len);
-
-u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
-    u4_t start = micros();
-    u4_t res = os_aes_internal(mode, buf, len);
-    printf("AES mode %u of %u bytes took %u microseconds\n", (unsigned)mode, (unsigned)len, (unsigned)(micros() - start));
-    return res;
-}
-
 #if AES_IMPLEMENTATION > 1
 #if AES_IMPLEMENTATION == 2
 #include "../aes/AES-128_V10.h"
@@ -499,3 +490,10 @@ u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
     return 0;
 }
 #endif
+
+u4_t os_aes (u1_t mode, xref2u1_t buf, u2_t len) {
+    u4_t start = micros();
+    u4_t res = os_aes_internal(mode, buf, len);
+    printf("AES mode %u of %u bytes took %u microseconds\n", (unsigned)mode, (unsigned)len, (unsigned)(micros() - start));
+    return res;
+}
