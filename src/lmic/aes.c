@@ -97,19 +97,19 @@ static void os_aes_cmac(xref2u1_t buf, u2_t len, u1_t prepend_aux) {
 // counter block. The last byte of the counter block will be incremented
 // for every block. The given buffer will be encrypted in place.
 static void os_aes_ctr (xref2u1_t buf, u2_t len) {
-            u1_t ctr[16];
-            while (len) {
-                // Encrypt the counter block with the selected key
-                memcpy(ctr, AESaux, sizeof(ctr));
-                AES_Encrypt(ctr, AESkey);
+    u1_t ctr[16];
+    while (len) {
+        // Encrypt the counter block with the selected key
+        memcpy(ctr, AESaux, sizeof(ctr));
+        AES_Encrypt(ctr, AESkey);
 
-                // Xor the payload with the resulting ciphertext
-                for (u1_t i = 0; i < 16 && len > 0; i++, len--, buf++)
-                    *buf ^= ctr[i];
+        // Xor the payload with the resulting ciphertext
+        for (u1_t i = 0; i < 16 && len > 0; i++, len--, buf++)
+            *buf ^= ctr[i];
 
-                // Increment the block index byte
-                AESaux[15]++;
-            }
+        // Increment the block index byte
+        AESaux[15]++;
+    }
 }
 
 u4_t os_aes_internal (u1_t mode, xref2u1_t buf, u2_t len) {
