@@ -208,6 +208,8 @@ void hal_sleep () {
 // -----------------------------------------------------------------------------
 
 #if defined(LMIC_PRINTF_TO)
+#if defined(__AVR)
+// avr-libc provides an alternative (simpler) way to override STDOUT
 static int uart_putchar (char c, FILE *)
 {
     LMIC_PRINTF_TO.write(c) ;
@@ -225,6 +227,24 @@ void hal_printf_init() {
     // The uart is the standard output device STDOUT.
     stdout = &uartout ;
 }
+#else // defined(__AVR)
+// On other platforms, use the somewhat more complex "cookie"-based
+// approach to custom streams. This is a GNU-specific extension to libc.
+static ssize_t uart_putchar (void *, const char *buf, size_t len) {
+    return LMIC_PRINTF_TO.write(buf, len);
+}
+
+static cookie_io_functions_t functions = {
+    .read = NULL,
+    .write = uart_putchar,
+    .seek = NULL,
+    .close = NULL
+};
+
+void hal_printf_init() {
+    stdout = fopencookie(NULL, "w", functions);
+}
+#endif // !defined(__AVR)
 #endif // defined(LMIC_PRINTF_TO)
 
 void hal_init () {
