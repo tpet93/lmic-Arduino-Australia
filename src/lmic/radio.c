@@ -399,7 +399,7 @@ static void configChannel () {
 static void configPower () {
 #ifdef CFG_sx1276_radio
 	s1_t pw = (s1_t)LMIC.txpow;
-	
+
 
 	if(pw >= 20) {
 		pw = 20;
@@ -409,10 +409,10 @@ static void configPower () {
 
 	pw -= 3; // pa dac adds 3?
 
-	writeReg(RegPaConfig, (u1_t)(0x80 | (pw-2)));// pa boost pin + max power  = 15 // 2 is min powwer  Pout=17-(15-OutputPower) 
+	writeReg(RegPaConfig, (u1_t)(0x80 | (pw-2) & 0xf));// pa boost pin + max power  = 15 // 2 is min powwer  Pout=17-(15-OutputPower) 
 
 	//writeReg(RegPaDac, readReg(RegPaDac)|0x4); // normal power
-	writeReg(RegPaDac, readReg(RegPaDac) | 0x7); //max power
+	writeReg(RegPaDac, readReg(RegPaDac) | 0x7); //max power adds 3 Dbm to power setting?
 
 
 #elif CFG_sx1272_radio
