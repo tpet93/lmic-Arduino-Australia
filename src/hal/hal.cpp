@@ -201,9 +201,12 @@ void hal_enableIRQs () {
     }
 }
 
-void hal_sleep () {
-    // Not implemented
+void hal_sleep()
+{
+	extern void(*hal_SleepCallback)();
+	hal_SleepCallback();
 }
+
 
 // -----------------------------------------------------------------------------
 
