@@ -31,12 +31,12 @@
 // Enable this to allow using printf() to print to the given serial port
 // (or any other Print object). This can be easy for debugging. The
 // current implementation only works on AVR, though.
-#define LMIC_PRINTF_TO SerialUSB
+#define LMIC_PRINTF_TO Serial
 
 // Any runtime assertion failures are printed to this serial port (or
 // any other Print object). If this is unset, any failures just silently
 // halt execution.
-#define LMIC_FAILURE_TO SerialUSB
+#define LMIC_FAILURE_TO Serial
 
 // Uncomment this to disable all code related to joining
 //#define DISABLE_JOIN
@@ -73,7 +73,7 @@
 // implementation is optimized for speed on 32-bit processors using
 // fairly big lookup tables, but it takes up big amounts of flash on the
 // AVR architecture.
-// #define USE_ORIGINAL_AES
+ #define USE_ORIGINAL_AES
 //
 // This selects the AES implementation written by Ideetroon for their
 // own LoRaWAN library. It also uses lookup tables, but smaller
