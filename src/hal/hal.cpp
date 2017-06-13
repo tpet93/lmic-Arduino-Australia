@@ -181,7 +181,8 @@ u1_t hal_checkTimer (u4_t time) {
 static uint8_t irqlevel = 0;
 
 void hal_disableIRQs () {
-    noInterrupts();
+    //noInterrupts();
+	__disable_irq();
     irqlevel++;
 }
 
@@ -203,8 +204,15 @@ void hal_enableIRQs () {
 
 void hal_sleep()
 {
+	__enable_irq();
 	extern void(*hal_SleepCallback)();
 	hal_SleepCallback();
+}
+
+void hal_wdt_reset()
+{
+	extern void(*hal_wdtCallback)();
+	hal_wdtCallback();
 }
 
 

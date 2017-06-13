@@ -59,7 +59,7 @@ void hal_enableIRQs (void);
  * put system and CPU in low-power mode, sleep until interrupt.
  */
 void hal_sleep (void);
-
+void hal_wdt_reset(void);
 /*
  * return 32-bit system time in ticks.
  */
