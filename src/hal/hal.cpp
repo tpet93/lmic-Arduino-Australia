@@ -181,13 +181,15 @@ u1_t hal_checkTimer (u4_t time) {
 static uint8_t irqlevel = 0;
 
 void hal_disableIRQs () {
-    //noInterrupts();
-	__disable_irq();
+	noInterrupts();
     irqlevel++;
 }
 
 void hal_enableIRQs () {
-    if(--irqlevel == 0) {
+	if (irqlevel > 0) irqlevel--; // cant increment below zero (wrap around to 255)
+
+    if(irqlevel == 0) 
+	{
         interrupts();
 
         // Instead of using proper interrupts (which are a bit tricky
@@ -200,6 +202,7 @@ void hal_enableIRQs () {
         // we would otherwise get for running SPI transfers inside ISRs
         hal_io_check();
     }
+	
 }
 
 void hal_sleep()
