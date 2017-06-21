@@ -1394,7 +1394,9 @@ static void txDone(ostime_t delay, osjobcb_t func) {
 #endif // !DISABLE_PING
 
 	// Change RX frequency / rps (US only) before we increment txChnl
+#if !defined (DISABLE_RX)
 	setRx1Params();
+#endif
 	// LMIC.rxsyms carries the TX datarate (can be != LMIC.datarate [confirm retries etc.])
 	// Setup receive - LMIC.rxtime is preloaded with 1.5 symbols offset to tune
 	// into the middle of the 8 symbols preamble.
@@ -1407,7 +1409,15 @@ static void txDone(ostime_t delay, osjobcb_t func) {
 	else
 #endif
 	{
+
+#if !defined (DISABLE_RX)
 		schedRx12(delay, func, LMIC.dndr);
+#else
+		LMIC.opmode &= ~(OP_TXDATA | OP_TXRXPEND);
+		LMIC.dataLen = 0;
+		reportEvent(EV_TXCOMPLETE);
+#endif
+
 	}
 }
 
@@ -1601,6 +1611,7 @@ static void setupRx1DnData(xref2osjob_t osjob) {
 
 
 static void updataDone(xref2osjob_t osjob) {
+
 	txDone(sec2osticks(LMIC.rxDelay), FUNC_ADDR(setupRx1DnData));
 }
 
@@ -2238,7 +2249,7 @@ void LMIC_reset(void) {
 
 #if defined(CFG_us915)
 
-	#if defined(CFG_au915)
+#if defined(CFG_au915)
 	mapChannels(0, 0x00FF);
 	mapChannels(1, 0x0000);
 	mapChannels(2, 0x0000);

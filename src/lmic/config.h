@@ -8,6 +8,7 @@
 //#define CFG_eu868 1
 #define CFG_us915 1
 #define CFG_au915 1
+#define  DISABLE_RX  // remove receive window
 // This is the SX1272/SX1273 radio, which is also used on the HopeRF
 // RFM92 boards.
 //#define CFG_sx1272_radio 1
@@ -39,12 +40,12 @@
 #define LMIC_FAILURE_TO Serial
 
 // Uncomment this to disable all code related to joining
-//#define DISABLE_JOIN
+#define DISABLE_JOIN
 // Uncomment this to disable all code related to ping
-//#define DISABLE_PING
+#define DISABLE_PING
 // Uncomment this to disable all code related to beacon tracking.
 // Requires ping to be disabled too
-//#define DISABLE_BEACONS
+#define DISABLE_BEACONS
 
 // Uncomment these to disable the corresponding MAC commands.
 // Class A

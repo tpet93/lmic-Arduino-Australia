@@ -105,13 +105,13 @@ void os_runloop_once() {
 	}
 	else
 	{ // nothing pending
-		hal_wdt_reset();// run wdt reset callback
+		//hal_wdt_reset();// run wdt reset callback
 		hal_sleep(); // wake by irq (timer already restarted)
 	}
 
 	hal_enableIRQs();
 	if (j) { // run job callback
-		hal_wdt_reset(); // run wdt reset callback
+		//hal_wdt_reset(); // run wdt reset callback
 		j->func(j);
 
 	}
