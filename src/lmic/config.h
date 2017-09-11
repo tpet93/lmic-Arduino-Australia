@@ -8,7 +8,7 @@
 //#define CFG_eu868 1
 #define CFG_us915 1
 #define CFG_au915 1
-#define  DISABLE_RX  // remove receive window
+//#define  DISABLE_RX  // remove receive window
 // This is the SX1272/SX1273 radio, which is also used on the HopeRF
 // RFM92 boards.
 //#define CFG_sx1272_radio 1

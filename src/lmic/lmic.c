@@ -1904,6 +1904,7 @@ static bit_t processDnData(void) {
 				// Schedule another retransmission
 				txDelay(LMIC.rxtime, RETRY_PERIOD_secs);
 				LMIC.opmode &= ~OP_TXRXPEND;
+				hal_wdt_reset();// reset watchdog between retrys
 				engineUpdate();
 				return 1;
 			}
