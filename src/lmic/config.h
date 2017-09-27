@@ -40,7 +40,7 @@
 #define LMIC_FAILURE_TO Serial
 
 // Uncomment this to disable all code related to joining
-#define DISABLE_JOIN
+//#define DISABLE_JOIN
 // Uncomment this to disable all code related to ping
 #define DISABLE_PING
 // Uncomment this to disable all code related to beacon tracking.

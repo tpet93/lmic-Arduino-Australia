@@ -42,7 +42,7 @@
 #endif
 
 // Special APIs - for development or testing
-#define isTESTMODE() 0
+#define isTESTMODE() 1  // use DNW2_SAFETY_ZONE for join retry delay
 
 DEFINE_LMIC;
 
@@ -877,10 +877,11 @@ static void setBcnRxParams(void) {
 static void initJoinLoop(void) {
 	LMIC.chRnd = 0;
 	LMIC.txChnl = 0;
+	_nextTx();
 	LMIC.adrTxPow = 20;
 	ASSERT((LMIC.opmode & OP_NEXTCHNL) == 0);
 	LMIC.txend = os_getTime();
-	setDrJoin(DRCHG_SET, DR_SF7);
+	setDrJoin(DRCHG_SET,DR_SF10);
 }
 
 static ostime_t nextJoinState(void) {
@@ -888,20 +889,24 @@ static ostime_t nextJoinState(void) {
 	//   SF7/8/9/10  on a random channel 0..63
 	//   SF8C        on a random channel 64..71
 	//
-	u1_t failed = 0;
-	if (LMIC.datarate != DR_SF8C) {
-		LMIC.txChnl = 64 + (LMIC.txChnl & 7);
-		setDrJoin(DRCHG_SET, DR_SF8C);
-	}
-	else {
-		LMIC.txChnl = os_getRndU1() & 0x3F;
-		s1_t dr = DR_SF7 - ++LMIC.txCnt;
-		if (dr < DR_SF10) {
-			dr = DR_SF10;
-			failed = 1; // All DR exhausted - signal failed
-		}
-		setDrJoin(DRCHG_SET, dr);
-	}
+
+
+
+	u1_t failed = 1;
+	//if (LMIC.datarate != DR_SF8C) {
+	//	LMIC.txChnl = 64 + (LMIC.txChnl & 7);
+	//	setDrJoin(DRCHG_SET, DR_SF8C);
+	//}
+	//else {
+	_nextTx(); // randomize next join channel
+	//LMIC.txChnl = os_getRndU1() & 0x0F;
+	//	s1_t dr = DR_SF7 - ++LMIC.txCnt;
+	//	if (dr < DR_SF10) {
+	//		dr = DR_SF10;
+	//		failed = 1; // All DR exhausted - signal failed
+	//	}
+	//	setDrJoin(DRCHG_SET, dr);
+	//}
 	LMIC.opmode &= ~OP_NEXTCHNL;
 	LMIC.txend = os_getTime() +
 		(isTESTMODE()
