@@ -1585,8 +1585,12 @@ static void processRx2DnDataDelay(xref2osjob_t osjob) {
 }
 
 static void processRx2DnData(xref2osjob_t osjob) {
-	if (LMIC.dataLen == 0) {
-		LMIC.txrxFlags = 0;  // nothing in 1st/2nd DN slot
+	if (LMIC.dataLen == 0) 
+	{
+		LMIC.txrxFlags = 0;  
+		//printf("recevied %d", LMIC.dataLen);
+		
+		// nothing in 1st/2nd DN slot
 		// Delay callback processing to avoid up TX while gateway is txing our missed frame!
 		// Since DNW2 uses SF12 by default we wait 3 secs.
 		os_setTimedCallback(&LMIC.osjob,
