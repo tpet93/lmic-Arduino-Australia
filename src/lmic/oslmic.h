@@ -39,7 +39,8 @@ typedef const char* str_t;
 
 #include <string.h>
 #include "hal.h"
-#define EV(a,b,c) /**/
+#define EV(a,b,c) //(((LMIC_DEBUG_LEVEL)>(1))?(printf("evauluate, a = %s, b = %s, c = %s",a,b,c)):(0))/**/
+
 #define DO_DEVDB(field1,field2) /**/
 #if !defined(CFG_noassert)
 #define ASSERT(cond) if(!(cond)) hal_failed(__FILE__, __LINE__)

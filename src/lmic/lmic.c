@@ -324,7 +324,7 @@ extern inline int isSlowerDR(dr_t dr1, dr_t dr2);
 extern inline dr_t  incDR(dr_t dr);
 extern inline dr_t  decDR(dr_t dr);
 extern inline dr_t  assertDR(dr_t dr);
-extern inline dr_t  validDR(dr_t dr);
+extern inline bit_t  validDR(dr_t dr);
 extern inline dr_t  lowerDR(dr_t dr, u1_t n);
 
 extern inline sf_t  getSf(rps_t params);
@@ -881,7 +881,7 @@ static void initJoinLoop(void) {
 	LMIC.adrTxPow = 20;
 	ASSERT((LMIC.opmode & OP_NEXTCHNL) == 0);
 	LMIC.txend = os_getTime();
-	setDrJoin(DRCHG_SET,DR_SF10);
+	setDrJoin(DRCHG_SET, DR_SF10);
 }
 
 static ostime_t nextJoinState(void) {
@@ -1027,6 +1027,9 @@ static int decodeBeacon(void) {
 
 
 static bit_t decodeFrame(void) {
+#if LMIC_DEBUG_LEVEL > 0
+	printf("%lu: in decodefram\n", os_getTime());
+#endif
 	xref2u1_t d = LMIC.frame;
 	u1_t hdr = d[0];
 	u1_t ftype = hdr & HDR_FTYPE;
@@ -1042,7 +1045,7 @@ static bit_t decodeFrame(void) {
 			e_.info2 = hdr + (dlen << 8)));
 	norx:
 #if LMIC_DEBUG_LEVEL > 0
-		printf("%lu: Invalid downlink, window=%s\n", os_getTime(), window);
+		printf("%lu: Invalid downlink, window=%s, frametype=%d,dleng=%d,hdr=%d\n", os_getTime(), window, ftype, dlen, hdr);
 #endif
 		LMIC.dataLen = 0;
 		return 0;
@@ -1056,18 +1059,34 @@ static bit_t decodeFrame(void) {
 	int  ackup = (fct & FCT_ACK) != 0 ? 1 : 0;   // ACK last up frame
 	int  poff = OFF_DAT_OPTS + olen;
 	int  pend = dlen - 4;  // MIC
+#if LMIC_DEBUG_LEVEL > 0
+	printf(" intial seqno = %d\n", seqno);
 
+#endif
 	if (addr != LMIC.devaddr) {
 		EV(specCond, WARN, (e_.reason = EV::specCond_t::ALIEN_ADDRESS,
 			e_.eui = MAIN::CDEV->getEui(),
 			e_.info = addr,
 			e_.info2 = LMIC.devaddr));
+#if LMIC_DEBUG_LEVEL > 0
+		printf("this device addr '%08X'\n", LMIC.devaddr);
+		printf("%lu: Invalid devaddr:", os_getTime());
+		printf("'");
+		printf("%08X", addr);
+		printf("'\n");
+#endif
+
 		goto norx;
 	}
 	if (poff > pend) {
 		EV(specCond, ERR, (e_.reason = EV::specCond_t::CORRUPTED_FRAME,
 			e_.eui = MAIN::CDEV->getEui(),
 			e_.info = 0x1000000 + (poff - pend) + (fct << 8) + (dlen << 16)));
+
+#if LMIC_DEBUG_LEVEL > 0
+		printf("pending\n");
+
+#endif
 		goto norx;
 	}
 
@@ -1076,15 +1095,28 @@ static bit_t decodeFrame(void) {
 
 	if (pend > poff)
 		port = d[poff++];
+	if (IGNOREDNCOUNTRESET)
+	{
+		LMIC.seqnoDn = seqno; //set internal dncounter to equal the one in the recieved lora packet
+	}
+	else
+	{
+		seqno = LMIC.seqnoDn + (u2_t)(seqno - LMIC.seqnoDn);
+	}
+#if LMIC_DEBUG_LEVEL > 0
+	printf(" seqno = %d,LMIC.seqnodn = %d\n", seqno, LMIC.seqnoDn);
 
-	seqno = LMIC.seqnoDn + (u2_t)(seqno - LMIC.seqnoDn);
-
+#endif
 	if (!aes_verifyMic(LMIC.nwkKey, LMIC.devaddr, seqno, /*dn*/1, d, pend)) {
 		EV(spe3Cond, ERR, (e_.reason = EV::spe3Cond_t::CORRUPTED_MIC,
 			e_.eui1 = MAIN::CDEV->getEui(),
 			e_.info1 = Base::lsbf4(&d[pend]),
 			e_.info2 = seqno,
 			e_.info3 = LMIC.devaddr));
+#if LMIC_DEBUG_LEVEL > 0
+		printf("corrupted mic, seq no = %d\n", seqno);
+
+#endif
 		goto norx;
 	}
 	if (seqno < LMIC.seqnoDn) {
@@ -1093,6 +1125,10 @@ static bit_t decodeFrame(void) {
 				e_.eui = MAIN::CDEV->getEui(),
 				e_.info = LMIC.seqnoDn,
 				e_.info2 = seqno));
+#if LMIC_DEBUG_LEVEL > 0
+			printf("dnseqrollover\n");
+
+#endif
 			goto norx;
 		}
 		if (seqno != LMIC.seqnoDn - 1 || !LMIC.dnConf || ftype != HDR_FTYPE_DCDN) {
@@ -1100,6 +1136,10 @@ static bit_t decodeFrame(void) {
 				e_.eui = MAIN::CDEV->getEui(),
 				e_.info = LMIC.seqnoDn,
 				e_.info2 = seqno));
+#if LMIC_DEBUG_LEVEL > 0
+			printf("dnseqobsolete\n");
+
+#endif
 			goto norx;
 		}
 		// Replay of previous sequence number allowed only if
@@ -1342,7 +1382,16 @@ static void setupRx2(void) {
 	LMIC.rps = dndr2rps(LMIC.dn2Dr);
 	LMIC.freq = LMIC.dn2Freq;
 	LMIC.dataLen = 0;
-	os_radio(RADIO_RX);
+	if (CLASSC)
+	{
+		os_radio(RADIO_RXON);
+
+	}
+	else
+	{
+		os_radio(RADIO_RX);
+
+	}
 }
 
 
@@ -1566,7 +1615,7 @@ static void processRx1Jacc(xref2osjob_t osjob) {
 
 static void setupRx1Jacc(xref2osjob_t osjob) {
 	setupRx1(FUNC_ADDR(processRx1Jacc));
-}
+	}
 
 
 static void jreqDone(xref2osjob_t osjob) {
@@ -1585,11 +1634,12 @@ static void processRx2DnDataDelay(xref2osjob_t osjob) {
 }
 
 static void processRx2DnData(xref2osjob_t osjob) {
-	if (LMIC.dataLen == 0) 
+	if (LMIC.dataLen == 0)
 	{
-		LMIC.txrxFlags = 0;  
-		//printf("recevied %d", LMIC.dataLen);
-		
+		LMIC.txrxFlags = 0;
+#if LMIC_DEBUG_LEVEL > 0
+		printf("recevied %d", LMIC.dataLen);
+#endif
 		// nothing in 1st/2nd DN slot
 		// Delay callback processing to avoid up TX while gateway is txing our missed frame!
 		// Since DNW2 uses SF12 by default we wait 3 secs.
@@ -1598,6 +1648,13 @@ static void processRx2DnData(xref2osjob_t osjob) {
 			processRx2DnDataDelay);
 		return;
 	}
+#if LMIC_DEBUG_LEVEL > 0
+	printf("processRx2DnData, dlen = %d  ,databeg = %d ", LMIC.dataLen, LMIC.dataBeg);
+	printf("'");
+	for (int i = 0; i  < LMIC.dataLen; i++)
+		printf("%02X ", LMIC.frame[i]);
+	printf("'\n");
+#endif
 	processDnData();
 }
 
@@ -1813,7 +1870,7 @@ bit_t LMIC_enableTracking(u1_t tryBcnInfo) {
 	if ((LMIC.bcninfoTries = tryBcnInfo) == 0)
 		startScan();
 	return 1;  // enabled
-}
+	}
 
 
 void LMIC_disableTracking(void) {
@@ -1874,7 +1931,7 @@ bit_t LMIC_startJoining(void) {
 		// reportEvent will call engineUpdate which then starts sending JOIN REQUESTS
 		os_setCallback(&LMIC.osjob, FUNC_ADDR(startJoining));
 		return 1;
-	}
+}
 	return 0; // already joined
 }
 #endif // !DISABLE_JOIN
@@ -2031,7 +2088,7 @@ rev:
 		rxschedInit(&LMIC.ping);  // note: reuses LMIC.frame buffer!
 #endif // !DISABLE_PING
 	reportEvent(ev);
-}
+	}
 
 
 static void startRxBcn(xref2osjob_t osjob) {
@@ -2115,13 +2172,13 @@ static void engineUpdate(void) {
 				if ((LMIC.opmode & OP_REJOIN) != 0) {
 					txdr = lowerDR(txdr, LMIC.rejoinCnt);
 					ftype = HDR_FTYPE_REJOIN;
-				}
+		}
 				else {
 					ftype = HDR_FTYPE_JREQ;
 				}
 				buildJoinRequest(ftype);
 				LMIC.osjob.func = FUNC_ADDR(jreqDone);
-			}
+		}
 			else
 #endif // !DISABLE_JOIN
 			{
@@ -2155,7 +2212,7 @@ static void engineUpdate(void) {
 			updateTx(txbeg);
 			os_radio(RADIO_TX);
 			return;
-		}
+	}
 		// Cannot yet TX
 		if ((LMIC.opmode & OP_TRACK) == 0)
 			goto txdelay; // We don't track the beacon - nothing else to do - so wait for the time to TX
@@ -2212,7 +2269,7 @@ static void engineUpdate(void) {
 			   e_.info = osticks2ms(txbeg - now),
 			   e_.info2 = LMIC.seqnoUp - 1));
 		   os_setTimedCallback(&LMIC.osjob, txbeg - TX_RAMPUP, FUNC_ADDR(runEngineUpdate));
-}
+	}
 
 
 void LMIC_setAdrMode(bit_t enabled) {
@@ -2316,6 +2373,10 @@ int LMIC_setTxData2(u1_t port, xref2u1_t data, u1_t dlen, u1_t confirmed) {
 		os_copyMem(LMIC.pendTxData, data, dlen);
 	LMIC.pendTxConf = confirmed;
 	LMIC.pendTxPort = port;
+#if LMIC_DEBUG_LEVEL > 0
+	printf("port = %d \n", port);
+	printf("'");
+#endif
 	LMIC.pendTxLen = dlen;
 	LMIC_setTxData();
 	return 0;
