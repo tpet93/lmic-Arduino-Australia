@@ -4,7 +4,7 @@
 // In the original LMIC code, these config values were defined on the
 // gcc commandline. Since Arduino does not allow easily modifying the
 // compiler commandline, use this file instead.
-#define CLASSC 1
+#define CLASSC 0
 #define IGNOREDNCOUNTRESET 0
 //#define CFG_eu868 1
 #define CFG_us915 1
@@ -28,7 +28,7 @@
 // enable more verbose output. Make sure that printf is actually
 // configured (e.g. on AVR it is not by default), otherwise using it can
 // cause crashing.
-#define LMIC_DEBUG_LEVEL 2
+#define LMIC_DEBUG_LEVEL 0
 
 // Enable this to allow using printf() to print to the given serial port
 // (or any other Print object). This can be easy for debugging. The
