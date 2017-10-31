@@ -1214,6 +1214,7 @@ static bit_t decodeFrame(void) {
 			continue;
 		}
 		case MCMD_DN2P_SET: {
+
 #if !defined(DISABLE_MCMD_DN2P_SET)
 			dr_t dr = (dr_t)(opts[oidx + 1] & 0x0F);
 			u4_t freq = convFreq(&opts[oidx + 2]);
@@ -1230,6 +1231,9 @@ static bit_t decodeFrame(void) {
 			}
 #endif // !DISABLE_MCMD_DN2P_SET
 			oidx += 5;
+#if LMIC_DEBUG_LEVEL > 0
+			printf("%lu:MCMD set dn2p, %d", os_getTime(), LMIC.dn2Freq);
+#endif
 			continue;
 		}
 		case MCMD_DCAP_REQ: {
@@ -1767,8 +1771,13 @@ static void buildDataFrame(void) {
 		| (LMIC.adrAckReq >= 0 ? FCT_ADRARQ : 0)
 		| (end - OFF_DAT_OPTS));
 	os_wlsbf4(LMIC.frame + OFF_DAT_ADDR, LMIC.devaddr);
+#if LMIC_DEBUG_LEVEL > 0
+	printf("%lu: buildframe, txCnt=%d,lmic.seqnoup=%d \n", os_getTime(), LMIC.txCnt, LMIC.seqnoUp);
+#endif
 
-	if (LMIC.txCnt == 0) {
+
+	if ((LMIC.txCnt == 0))//|| (LMIC.opmode == OP_POLL)) // LORIOT Need to increase frame counter on DN ACK (empty up frame)
+	{
 		LMIC.seqnoUp += 1;
 		DO_DEVDB(LMIC.seqnoUp, seqnoUp);
 	}
@@ -2125,6 +2134,7 @@ static void engineUpdate(void) {
 	ostime_t now = os_getTime();
 	ostime_t rxtime = 0;
 	ostime_t txbeg = 0;
+	ostime_t txdelay = 0; // delay in event of ack to make sure server is ready
 
 #if !defined(DISABLE_BEACONS)
 	if ((LMIC.opmode & OP_TRACK) != 0) {
@@ -2139,13 +2149,23 @@ static void engineUpdate(void) {
 		// Assuming txChnl points to channel which first becomes available again.
 		bit_t jacc = ((LMIC.opmode & (OP_JOINING | OP_REJOIN)) != 0 ? 1 : 0);
 		// Find next suitable channel and return availability time
+		
+		if (LMIC.opmode & OP_POLL)// delay confirmation message by a small amount, issues with loriot missing class C confirmations otherwise
+		{
+			txdelay = ACK_DELAY;
+		}
+
+
+
 		if ((LMIC.opmode & OP_NEXTCHNL) != 0) {
-			txbeg = LMIC.txend = nextTx(now);
+			txbeg = LMIC.txend = nextTx(now) + txdelay;
 			LMIC.opmode &= ~OP_NEXTCHNL;
 		}
 		else {
-			txbeg = LMIC.txend;
+			txbeg = LMIC.txend + txdelay;
 		}
+
+
 		// Delayed TX or waiting for duty cycle?
 		if ((LMIC.globalDutyRate != 0 || (LMIC.opmode & OP_RNDTX) != 0) && (txbeg - LMIC.globalDutyAvail) < 0)
 			txbeg = LMIC.globalDutyAvail;

@@ -96,6 +96,9 @@ void os_runloop_once (void);
 #ifndef TX_RAMPUP
 #define TX_RAMPUP  (us2osticks(2000))
 #endif
+#ifndef ACK_DELAY
+#define ACK_DELAY  (us2osticks(200000))
+#endif
 
 #ifndef OSTICKS_PER_SEC
 #define OSTICKS_PER_SEC 32768

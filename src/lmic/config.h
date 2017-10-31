@@ -5,7 +5,7 @@
 // gcc commandline. Since Arduino does not allow easily modifying the
 // compiler commandline, use this file instead.
 #define CLASSC 1
-#define IGNOREDNCOUNTRESET 1
+#define IGNOREDNCOUNTRESET 0
 //#define CFG_eu868 1
 #define CFG_us915 1
 #define CFG_au915 1

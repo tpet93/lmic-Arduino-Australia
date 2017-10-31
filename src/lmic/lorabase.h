@@ -147,7 +147,7 @@ enum {
 enum { CHNL_PING         = 0 }; // used only for default init of state (follows beacon - rotating)
 enum { FREQ_PING         = US915_500kHz_DNFBASE + CHNL_PING*US915_500kHz_DNFSTEP };  // default ping freq
 enum { DR_PING           = DR_SF10CR };       // default ping DR
-enum { CHNL_DNW2         = 0 };
+enum { CHNL_DNW2         = 1 };
 enum { FREQ_DNW2         = US915_500kHz_DNFBASE + CHNL_DNW2*US915_500kHz_DNFSTEP };
 enum { DR_DNW2           = DR_SF12CR };
 enum { CHNL_BCN          = 0 }; // used only for default init of state (rotating beacon scheme)
