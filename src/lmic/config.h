@@ -7,12 +7,16 @@
 
 
 
-#define CLASSC 0
+#define CLASSC 1
 #define IGNOREDNCOUNTRESET 0
 //#define  DISABLE_RX  // remove receive window
-//#define DISABLE_JOIN
 
-#define LMIC_DEBUG_LEVEL 0
+//#define DISABLE_JOIN
+// Requires ping to be disabled too
+//#define DISABLE_BEACONS
+
+
+#define LMIC_DEBUG_LEVEL 2
 
 
 
@@ -30,7 +34,7 @@
 
 // 16 μs per tick
 // LMIC requires ticks to be 15.5μs - 100 μs long
-#define US_PER_OSTICK_EXPONENT 4
+#define US_PER_OSTICK_EXPONENT 5 // 64us
 #define US_PER_OSTICK (1 << US_PER_OSTICK_EXPONENT)
 #define OSTICKS_PER_SEC (1000000 / US_PER_OSTICK)
 
@@ -54,13 +58,11 @@
 // Uncomment this to disable all code related to ping
 #define DISABLE_PING
 // Uncomment this to disable all code related to beacon tracking.
-// Requires ping to be disabled too
-#define DISABLE_BEACONS
 
 // Uncomment these to disable the corresponding MAC commands.
 // Class A
 //#define DISABLE_MCMD_DCAP_REQ // duty cycle cap
-//#define DISABLE_MCMD_DN2P_SET // 2nd DN window param
+#define DISABLE_MCMD_DN2P_SET // 2nd DN window param
 //#define DISABLE_MCMD_SNCH_REQ // set new channel
 // Class B
 //#define DISABLE_MCMD_PING_SET // set ping freq, automatically disabled by DISABLE_PING

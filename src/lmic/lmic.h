@@ -305,6 +305,8 @@ void  LMIC_tryRejoin     (void);
 void LMIC_setSession (u4_t netid, devaddr_t devaddr, xref2u1_t nwkKey, xref2u1_t artKey);
 void LMIC_setLinkCheckMode (bit_t enabled);
 void LMIC_setClockError(u2_t error);
+void LMIC_processRx2DnData(xref2osjob_t osjob);
+
 
 // Declare onEvent() function, to make sure any definition will have the
 // C conventions, even when in a C++ file.

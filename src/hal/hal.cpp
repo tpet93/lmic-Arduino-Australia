@@ -129,7 +129,7 @@ u4_t hal_ticks () {
     // jumps, which should result in efficient code. By avoiding shifts
     // other than by multiples of 8 as much as possible, this is also
     // efficient on AVR (which only has 1-bit shifts).
-    static uint8_t overflow = 0;
+	static uint8_t overflow = 0x00; // 7c for overflow
 
     // Scaled down timestamp. The top US_PER_OSTICK_EXPONENT bits are 0,
     // the others will be the lower bits of our return value.
@@ -142,13 +142,13 @@ u4_t hal_ticks () {
     // between overflow and msb, it is added to the stored value,
     // so the overlapping bit becomes equal again and, if it changed
     // from 1 to 0, the upper bits are incremented.
-    overflow += (msb ^ overflow) & mask;
+    overflow += (msb ^ overflow) & mask ;
 
     // Return the scaled value with the upper bits of stored added. The
     // overlapping bit will be equal and the lower bits will be 0, so
     // bitwise or is a no-op for them.
     return scaled | ((uint32_t)overflow << 24);
-
+	
     // 0 leads to correct, but overly complex code (it could just return
     // micros() unmodified), 8 leaves no room for the overlapping bit.
     static_assert(US_PER_OSTICK_EXPONENT > 0 && US_PER_OSTICK_EXPONENT < 8, "Invalid US_PER_OSTICK_EXPONENT value");

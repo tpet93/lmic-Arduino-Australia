@@ -1386,9 +1386,12 @@ static void setupRx2(void) {
 	LMIC.rps = dndr2rps(LMIC.dn2Dr);
 	LMIC.freq = LMIC.dn2Freq;
 	LMIC.dataLen = 0;
-	if (CLASSC)
+	if (CLASSC && !(LMIC.opmode & OP_JOINING))
 	{
+		LMIC.rps = MAKERPS(SF12, BW500, CR_4_5, 0, 0);//temp workaround
+
 		os_radio(RADIO_RXON);
+		printf("%d:dn2dr, \n", LMIC.dn2Dr);
 
 	}
 	else
@@ -1436,6 +1439,13 @@ static void setupRx1(osjobcb_t func) {
 	LMIC.txrxFlags = TXRX_DNW1;
 	// Turn LMIC.rps from TX over to RX
 	LMIC.rps = setNocrc(LMIC.rps, 1);
+	
+	//if (CLASSC && (LMIC.opmode & OP_JOINING))
+	//{
+	//	//LMIC.rps = setBw(LMIC.rps, BW125);
+
+	//}
+	
 	LMIC.dataLen = 0;
 	LMIC.osjob.func = func;
 	os_radio(RADIO_RX);
@@ -1463,7 +1473,7 @@ static void txDone(ostime_t delay, osjobcb_t func) {
 		LMIC.rxtime = LMIC.txend + delay - PRERX_FSK*us2osticksRound(160);
 		LMIC.rxsyms = RXLEN_FSK;
 		os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
-	}
+}
 	else
 #endif
 	{
@@ -1492,6 +1502,8 @@ static void onJoinFailed(xref2osjob_t osjob) {
 
 
 static bit_t processJoinAccept(void) {
+
+	printf("process join");
 	ASSERT(LMIC.txrxFlags != TXRX_DNW1 || LMIC.dataLen != 0);
 	ASSERT((LMIC.opmode & OP_TXRXPEND) != 0);
 
@@ -1591,11 +1603,13 @@ static bit_t processJoinAccept(void) {
 	LMIC.txCnt = 0;
 	stateJustJoined();
 	LMIC.dn2Dr = LMIC.frame[OFF_JA_DLSET] & 0x0F;
+	printf("recevied dn2dr %d\n", LMIC.dn2Dr);
+
 	LMIC.rxDelay = LMIC.frame[OFF_JA_RXDLY];
 	if (LMIC.rxDelay == 0) LMIC.rxDelay = 1;
 	reportEvent(EV_JOINED);
 	return 1;
-}
+	}
 
 
 static void processRx2Jacc(xref2osjob_t osjob) {
@@ -1619,7 +1633,7 @@ static void processRx1Jacc(xref2osjob_t osjob) {
 
 static void setupRx1Jacc(xref2osjob_t osjob) {
 	setupRx1(FUNC_ADDR(processRx1Jacc));
-	}
+}
 
 
 static void jreqDone(xref2osjob_t osjob) {
@@ -1655,7 +1669,7 @@ static void processRx2DnData(xref2osjob_t osjob) {
 #if LMIC_DEBUG_LEVEL > 0
 	printf("processRx2DnData, dlen = %d  ,databeg = %d ", LMIC.dataLen, LMIC.dataBeg);
 	printf("'");
-	for (int i = 0; i  < LMIC.dataLen; i++)
+	for (int i = 0; i < LMIC.dataLen; i++)
 		printf("%02X ", LMIC.frame[i]);
 	printf("'\n");
 #endif
@@ -1669,7 +1683,8 @@ static void setupRx2DnData(xref2osjob_t osjob) {
 }
 
 
-static void processRx1DnData(xref2osjob_t osjob) {
+static void processRx1DnData(xref2osjob_t osjob)
+{
 	if (LMIC.dataLen == 0 || !processDnData())
 		schedRx12(sec2osticks(LMIC.rxDelay + (int)DELAY_EXTDNW2), FUNC_ADDR(setupRx2DnData), LMIC.dn2Dr);
 }
@@ -1820,7 +1835,7 @@ static void buildDataFrame(void) {
 		e_.opts.length = end - LORA::OFF_DAT_OPTS,
 		memcpy(&e_.opts[0], LMIC.frame + LORA::OFF_DAT_OPTS, end - LORA::OFF_DAT_OPTS)));
 	LMIC.dataLen = flen;
-}
+	}
 
 
 #if !defined(DISABLE_BEACONS)
@@ -1879,7 +1894,7 @@ bit_t LMIC_enableTracking(u1_t tryBcnInfo) {
 	if ((LMIC.bcninfoTries = tryBcnInfo) == 0)
 		startScan();
 	return 1;  // enabled
-	}
+}
 
 
 void LMIC_disableTracking(void) {
@@ -1940,7 +1955,7 @@ bit_t LMIC_startJoining(void) {
 		// reportEvent will call engineUpdate which then starts sending JOIN REQUESTS
 		os_setCallback(&LMIC.osjob, FUNC_ADDR(startJoining));
 		return 1;
-}
+	}
 	return 0; // already joined
 }
 #endif // !DISABLE_JOIN
@@ -1998,7 +2013,20 @@ static bit_t processDnData(void) {
 			LMIC.opmode &= ~OP_LINKDEAD;
 			reportEvent(EV_LINK_ALIVE);
 		}
-		reportEvent(EV_TXCOMPLETE);
+
+
+		if ((LMIC.txrxFlags & TXRX_ACK) && (CLASSC))// still want to use rx2 window
+		{
+			printf("Got Ack going to RX2");
+			LMIC.opmode |= (OP_TXRXPEND);
+			return 0;
+		}
+		else
+		{
+			reportEvent(EV_TXCOMPLETE);
+		}
+
+
 		// If we haven't heard from NWK in a while although we asked for a sign
 		// assume link is dead - notify application and keep going
 		if (LMIC.adrAckReq > LINK_CHECK_DEAD) {
@@ -2084,8 +2112,8 @@ static void processBeacon(xref2osjob_t osjob) {
 			LMIC.opmode &= ~(OP_TRACK | OP_PINGABLE | OP_PINGINI | OP_REJOIN);
 			reportEvent(EV_LOST_TSYNC);
 			return;
-		}
 	}
+}
 	LMIC.bcnRxtime = LMIC.bcninfo.txtime + BCN_INTV_osticks - calcRxWindow(0, DR_BCN);
 	LMIC.bcnRxsyms = LMIC.rxsyms;
 rev:
@@ -2097,7 +2125,7 @@ rev:
 		rxschedInit(&LMIC.ping);  // note: reuses LMIC.frame buffer!
 #endif // !DISABLE_PING
 	reportEvent(ev);
-	}
+}
 
 
 static void startRxBcn(xref2osjob_t osjob) {
@@ -2149,7 +2177,7 @@ static void engineUpdate(void) {
 		// Assuming txChnl points to channel which first becomes available again.
 		bit_t jacc = ((LMIC.opmode & (OP_JOINING | OP_REJOIN)) != 0 ? 1 : 0);
 		// Find next suitable channel and return availability time
-		
+
 		if (LMIC.opmode & OP_POLL)// delay confirmation message by a small amount, issues with loriot missing class C confirmations otherwise
 		{
 			txdelay = ACK_DELAY;
@@ -2192,13 +2220,13 @@ static void engineUpdate(void) {
 				if ((LMIC.opmode & OP_REJOIN) != 0) {
 					txdr = lowerDR(txdr, LMIC.rejoinCnt);
 					ftype = HDR_FTYPE_REJOIN;
-		}
+				}
 				else {
 					ftype = HDR_FTYPE_JREQ;
 				}
 				buildJoinRequest(ftype);
 				LMIC.osjob.func = FUNC_ADDR(jreqDone);
-		}
+			}
 			else
 #endif // !DISABLE_JOIN
 			{
@@ -2232,7 +2260,7 @@ static void engineUpdate(void) {
 			updateTx(txbeg);
 			os_radio(RADIO_TX);
 			return;
-	}
+		}
 		// Cannot yet TX
 		if ((LMIC.opmode & OP_TRACK) == 0)
 			goto txdelay; // We don't track the beacon - nothing else to do - so wait for the time to TX
@@ -2263,9 +2291,9 @@ static void engineUpdate(void) {
 				   ASSERT(LMIC.rxtime - now + RX_RAMPUP >= 0);
 				   os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, FUNC_ADDR(startRxPing));
 				   return;
-			   }
+	}
 			   // no - just wait for the beacon
-		   }
+}
 #endif // !DISABLE_PING
 
 		   if (txbeg != 0 && (txbeg - rxtime) < 0)
@@ -2400,6 +2428,12 @@ int LMIC_setTxData2(u1_t port, xref2u1_t data, u1_t dlen, u1_t confirmed) {
 	LMIC.pendTxLen = dlen;
 	LMIC_setTxData();
 	return 0;
+}
+
+
+void LMIC_processRx2DnData(xref2osjob_t osjob)
+{
+	processRx2DnData(osjob);
 }
 
 
