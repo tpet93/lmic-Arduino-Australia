@@ -1027,7 +1027,7 @@ static int decodeBeacon(void) {
 
 
 static bit_t decodeFrame(void) {
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 	printf("%lu: in decodefram\n", os_getTime());
 #endif
 	xref2u1_t d = LMIC.frame;
@@ -1048,7 +1048,18 @@ static bit_t decodeFrame(void) {
 		printf("%lu: Invalid downlink, window=%s, frametype=%d,dleng=%d,hdr=%d\n", os_getTime(), window, ftype, dlen, hdr);
 #endif
 		LMIC.dataLen = 0;
+		
+		if (((LMIC.opmode & (OP_JOINING | OP_REJOIN)) == 0) && (CLASSC) && (LMIC.txrxFlags & TXRX_DNW2) && (LMIC.txCnt ==0))
+			// not joining, in rx2 window, and not waiting on confirmed message.
+		{
+			#if LMIC_DEBUG_LEVEL > 2
+				printf("reschedule rx2 after bad rx");
+			#endif
+			schedRx12(0, FUNC_ADDR(setupRx2DnData), LMIC.dn2Dr);
+
+		}
 		return 0;
+		
 	}
 	// Validate exact frame length
 	// Note: device address was already read+evaluated in order to arrive here.
@@ -1059,7 +1070,7 @@ static bit_t decodeFrame(void) {
 	int  ackup = (fct & FCT_ACK) != 0 ? 1 : 0;   // ACK last up frame
 	int  poff = OFF_DAT_OPTS + olen;
 	int  pend = dlen - 4;  // MIC
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 	printf(" intial seqno = %d\n", seqno);
 
 #endif
@@ -1068,7 +1079,7 @@ static bit_t decodeFrame(void) {
 			e_.eui = MAIN::CDEV->getEui(),
 			e_.info = addr,
 			e_.info2 = LMIC.devaddr));
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 		printf("this device addr '%08X'\n", LMIC.devaddr);
 		printf("%lu: Invalid devaddr:", os_getTime());
 		printf("'");
@@ -1083,7 +1094,7 @@ static bit_t decodeFrame(void) {
 			e_.eui = MAIN::CDEV->getEui(),
 			e_.info = 0x1000000 + (poff - pend) + (fct << 8) + (dlen << 16)));
 
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 		printf("pending\n");
 
 #endif
@@ -1103,7 +1114,7 @@ static bit_t decodeFrame(void) {
 	{
 		seqno = LMIC.seqnoDn + (u2_t)(seqno - LMIC.seqnoDn);
 	}
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 	printf(" seqno = %d,LMIC.seqnodn = %d\n", seqno, LMIC.seqnoDn);
 
 #endif
@@ -1113,7 +1124,7 @@ static bit_t decodeFrame(void) {
 			e_.info1 = Base::lsbf4(&d[pend]),
 			e_.info2 = seqno,
 			e_.info3 = LMIC.devaddr));
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 		printf("corrupted mic, seq no = %d\n", seqno);
 
 #endif
@@ -1125,7 +1136,7 @@ static bit_t decodeFrame(void) {
 				e_.eui = MAIN::CDEV->getEui(),
 				e_.info = LMIC.seqnoDn,
 				e_.info2 = seqno));
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 			printf("dnseqrollover\n");
 
 #endif
@@ -1136,7 +1147,7 @@ static bit_t decodeFrame(void) {
 				e_.eui = MAIN::CDEV->getEui(),
 				e_.info = LMIC.seqnoDn,
 				e_.info2 = seqno));
-#if LMIC_DEBUG_LEVEL > 0
+#if LMIC_DEBUG_LEVEL > 2
 			printf("dnseqobsolete\n");
 
 #endif
@@ -1386,12 +1397,25 @@ static void setupRx2(void) {
 	LMIC.rps = dndr2rps(LMIC.dn2Dr);
 	LMIC.freq = LMIC.dn2Freq;
 	LMIC.dataLen = 0;
-	if (CLASSC && !(LMIC.opmode & OP_JOINING))
+#if LMIC_DEBUG_LEVEL > 2
+
+	printf("setupRX2\n");
+	printf("txcount %d \n",LMIC.txCnt);
+#endif
+	//if ( CLASSC && ((LMIC.opmode & (OP_JOINING | OP_REJOIN)) == 0))
+	if ( CLASSC && ((LMIC.opmode & OP_CLASSCSCAN) != 0))
+
 	{
 		LMIC.rps = MAKERPS(SF12, BW500, CR_4_5, 0, 0);//temp workaround
+		LMIC.opmode  |= OP_TXRXPEND;
+		if ((LMIC.opmode & (OP_JOINING| OP_REJOIN)) == 0)
+			LMIC.txCnt = 0;             // cancel any ongoing TX/RX retries
+#if LMIC_DEBUG_LEVEL > 2
 
+		printf("StartScan\n");
+#endif
+		engineUpdate();
 		os_radio(RADIO_RXON);
-		printf("%d:dn2dr, \n", LMIC.dn2Dr);
 
 	}
 	else
@@ -1402,7 +1426,10 @@ static void setupRx2(void) {
 }
 
 
-static void schedRx12(ostime_t delay, osjobcb_t func, u1_t dr) {
+ void schedRx12(ostime_t delay, osjobcb_t func, u1_t dr) {
+#if LMIC_DEBUG_LEVEL > 2
+	 printf("in sched rx12, delay  %d ms\n", osticks2ms(delay));
+#endif
 	ostime_t hsym = dr2hsym(dr);
 
 	LMIC.rxsyms = MINRX_SYMS;
@@ -1439,13 +1466,13 @@ static void setupRx1(osjobcb_t func) {
 	LMIC.txrxFlags = TXRX_DNW1;
 	// Turn LMIC.rps from TX over to RX
 	LMIC.rps = setNocrc(LMIC.rps, 1);
-	
+
 	//if (CLASSC && (LMIC.opmode & OP_JOINING))
 	//{
 	//	//LMIC.rps = setBw(LMIC.rps, BW125);
 
 	//}
-	
+
 	LMIC.dataLen = 0;
 	LMIC.osjob.func = func;
 	os_radio(RADIO_RX);
@@ -1473,12 +1500,15 @@ static void txDone(ostime_t delay, osjobcb_t func) {
 		LMIC.rxtime = LMIC.txend + delay - PRERX_FSK*us2osticksRound(160);
 		LMIC.rxsyms = RXLEN_FSK;
 		os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, func);
-}
+	}
 	else
 #endif
 	{
 
 #if !defined (DISABLE_RX)
+#if LMIC_DEBUG_LEVEL > 2
+		printf("schedrx12 in tx done");
+#endif
 		schedRx12(delay, func, LMIC.dndr);
 #else
 		LMIC.opmode &= ~(OP_TXDATA | OP_TXRXPEND);
@@ -1609,7 +1639,7 @@ static bit_t processJoinAccept(void) {
 	if (LMIC.rxDelay == 0) LMIC.rxDelay = 1;
 	reportEvent(EV_JOINED);
 	return 1;
-	}
+}
 
 
 static void processRx2Jacc(xref2osjob_t osjob) {
@@ -1677,7 +1707,7 @@ static void processRx2DnData(xref2osjob_t osjob) {
 }
 
 
-static void setupRx2DnData(xref2osjob_t osjob) {
+ void setupRx2DnData(xref2osjob_t osjob) {
 	LMIC.osjob.func = FUNC_ADDR(processRx2DnData);
 	setupRx2();
 }
@@ -1835,7 +1865,7 @@ static void buildDataFrame(void) {
 		e_.opts.length = end - LORA::OFF_DAT_OPTS,
 		memcpy(&e_.opts[0], LMIC.frame + LORA::OFF_DAT_OPTS, end - LORA::OFF_DAT_OPTS)));
 	LMIC.dataLen = flen;
-	}
+}
 
 
 #if !defined(DISABLE_BEACONS)
@@ -1983,24 +2013,37 @@ static void processPingRx(xref2osjob_t osjob) {
 
 
 static bit_t processDnData(void) {
-	ASSERT((LMIC.opmode & OP_TXRXPEND) != 0);
+	ASSERT((LMIC.opmode & OP_TXRXPEND) != 0); 
+
+	LMIC.opmode &= ~OP_CLASSCSCAN;
 
 	if (LMIC.dataLen == 0) {
 	norx:
 		if (LMIC.txCnt != 0) {
+
 			if (LMIC.txCnt < TXCONF_ATTEMPTS) {
+				#if LMIC_DEBUG_LEVEL > 2
+				printf("no ack retrying\n");
+				#endif
 				LMIC.txCnt += 1;
 				setDrTxpow(DRCHG_NOACK, lowerDR(LMIC.datarate, TABLE_GET_U1(DRADJUST, LMIC.txCnt)), KEEP_TXPOW);
 				// Schedule another retransmission
+
 				txDelay(LMIC.rxtime, RETRY_PERIOD_secs);
 				LMIC.opmode &= ~OP_TXRXPEND;
+
 				hal_wdt_reset();// reset watchdog between retrys
+
 				engineUpdate();
+
+
 				return 1;
 			}
 			LMIC.txrxFlags = TXRX_NACK | TXRX_NOPORT;
 		}
-		else {
+		else
+		{
+			//no pending confirms
 			// Nothing received - implies no port
 			LMIC.txrxFlags = TXRX_NOPORT;
 		}
@@ -2013,19 +2056,13 @@ static bit_t processDnData(void) {
 			LMIC.opmode &= ~OP_LINKDEAD;
 			reportEvent(EV_LINK_ALIVE);
 		}
+		#if LMIC_DEBUG_LEVEL > 2
+					printf("TX complete setting scan flag\n");
+		#endif
+			LMIC.opmode |= (OP_CLASSCSCAN);
 
-
-		if ((LMIC.txrxFlags & TXRX_ACK) && (CLASSC))// still want to use rx2 window
-		{
-			printf("Got Ack going to RX2");
-			LMIC.opmode |= (OP_TXRXPEND);
-			return 0;
-		}
-		else
-		{
 			reportEvent(EV_TXCOMPLETE);
-		}
-
+		
 
 		// If we haven't heard from NWK in a while although we asked for a sign
 		// assume link is dead - notify application and keep going
@@ -2112,8 +2149,8 @@ static void processBeacon(xref2osjob_t osjob) {
 			LMIC.opmode &= ~(OP_TRACK | OP_PINGABLE | OP_PINGINI | OP_REJOIN);
 			reportEvent(EV_LOST_TSYNC);
 			return;
+		}
 	}
-}
 	LMIC.bcnRxtime = LMIC.bcninfo.txtime + BCN_INTV_osticks - calcRxWindow(0, DR_BCN);
 	LMIC.bcnRxsyms = LMIC.rxsyms;
 rev:
@@ -2291,9 +2328,9 @@ static void engineUpdate(void) {
 				   ASSERT(LMIC.rxtime - now + RX_RAMPUP >= 0);
 				   os_setTimedCallback(&LMIC.osjob, LMIC.rxtime - RX_RAMPUP, FUNC_ADDR(startRxPing));
 				   return;
-	}
+			   }
 			   // no - just wait for the beacon
-}
+		   }
 #endif // !DISABLE_PING
 
 		   if (txbeg != 0 && (txbeg - rxtime) < 0)
@@ -2317,7 +2354,7 @@ static void engineUpdate(void) {
 			   e_.info = osticks2ms(txbeg - now),
 			   e_.info2 = LMIC.seqnoUp - 1));
 		   os_setTimedCallback(&LMIC.osjob, txbeg - TX_RAMPUP, FUNC_ADDR(runEngineUpdate));
-	}
+}
 
 
 void LMIC_setAdrMode(bit_t enabled) {
@@ -2406,7 +2443,9 @@ void LMIC_clrTxData(void) {
 
 
 void LMIC_setTxData(void) {
+	LMIC.opmode &= ~OP_CLASSCSCAN;
 	LMIC.opmode |= OP_TXDATA;
+
 	if ((LMIC.opmode & OP_JOINING) == 0)
 		LMIC.txCnt = 0;             // cancel any ongoing TX/RX retries
 	engineUpdate();

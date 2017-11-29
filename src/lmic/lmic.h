@@ -126,6 +126,8 @@ enum { OP_NONE     = 0x0000,
        OP_NEXTCHNL = 0x0800, // find a new channel
        OP_LINKDEAD = 0x1000, // link was reported as dead
        OP_TESTMODE = 0x2000, // developer test mode
+	   OP_CLASSCSCAN = 0x4000, // developer test mode
+
 };
 // TX-RX transaction flags - report back to user
 enum { TXRX_ACK    = 0x80,   // confirmed UP frame was acked
@@ -306,7 +308,8 @@ void LMIC_setSession (u4_t netid, devaddr_t devaddr, xref2u1_t nwkKey, xref2u1_t
 void LMIC_setLinkCheckMode (bit_t enabled);
 void LMIC_setClockError(u2_t error);
 void LMIC_processRx2DnData(xref2osjob_t osjob);
-
+void schedRx12(ostime_t delay, osjobcb_t func, u1_t dr);
+void setupRx2DnData(xref2osjob_t osjob);
 
 // Declare onEvent() function, to make sure any definition will have the
 // C conventions, even when in a C++ file.

@@ -13,10 +13,12 @@
 
 //#define DISABLE_JOIN
 // Requires ping to be disabled too
-//#define DISABLE_BEACONS
 
 
-#define LMIC_DEBUG_LEVEL 2
+#define DISABLE_BEACONS
+
+
+#define LMIC_DEBUG_LEVEL 4
 
 
 
