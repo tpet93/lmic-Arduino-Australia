@@ -164,6 +164,7 @@ struct lmic_t {
 
     osjob_t     osjob;
 
+	uint8_t txconfattempts;   //!< Transmit attempts for confirmed frames
     // Channel scheduling
 #if defined(CFG_eu868)
     band_t      bands[MAX_BANDS];

@@ -2021,12 +2021,13 @@ static bit_t processDnData(void) {
 	norx:
 		if (LMIC.txCnt != 0) {
 
-			if (LMIC.txCnt < TXCONF_ATTEMPTS) {
+			if (LMIC.txCnt < LMIC.txconfattempts) {
 				#if LMIC_DEBUG_LEVEL > 2
 				printf("no ack retrying\n");
 				#endif
 				LMIC.txCnt += 1;
-				setDrTxpow(DRCHG_NOACK, lowerDR(LMIC.datarate, TABLE_GET_U1(DRADJUST, LMIC.txCnt)), KEEP_TXPOW);
+				//setDrTxpow(DRCHG_NOACK, lowerDR(LMIC.datarate, TABLE_GET_U1(DRADJUST, LMIC.txCnt)), KEEP_TXPOW);
+				setDrTxpow(DRCHG_NOACK, lowerDR(LMIC.datarate,(LMIC.txCnt % 3 == 2)), KEEP_TXPOW); // lower datarate by 1 every 3 retrys
 				// Schedule another retransmission
 
 				txDelay(LMIC.rxtime, RETRY_PERIOD_secs);
@@ -2427,6 +2428,7 @@ void LMIC_reset(void) {
 
 
 void LMIC_init(void) {
+	LMIC.txconfattempts = 8;
 	LMIC.opmode = OP_SHUTDOWN;
 }
 

@@ -7,7 +7,7 @@
 
 
 
-#define CLASSC 1
+#define CLASSC 0
 #define IGNOREDNCOUNTRESET 0
 //#define  DISABLE_RX  // remove receive window
 
